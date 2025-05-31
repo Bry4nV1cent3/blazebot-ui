@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlazeBot UI - Painel de Controle</title>
+    <style>
+        /* Reset CSS */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; }
+        
+        body {
+            background: #121212;
+            color: white;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #333;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #FFD700;
+        }
+        
+        .games {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        
+        .game-panel {
+            background: #1E1E1E;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        .game-title {
+            color: #FFD700;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .game-content {
+            min-height: 200px;
+        }
+        
+        .double-wheel {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: #333;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .crash-graph {
+            height: 150px;
+            background: #222;
+            border-radius: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .crash-line {
+            height: 3px;
+            background: #FFD700;
+            position: absolute;
+            bottom: 50%;
+            width: 100%;
+            transform-origin: left;
+        }
+        
+        .mines-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+        
+        .mine-cell {
+            background: #333;
+            height: 40px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .controls {
+            margin-top: 15px;
+        }
+        
+        button {
+            background: #FFD700;
+            color: #121212;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #333;
+            border-radius: 5px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>BlazeBot UI</h1>
+            <p>Painel de Controle para Blaze (Simulação)</p>
+        </header>
+        
+        <div class="games">
+            <!-- DOUBLE -->
+            <div class="game-panel">
+                <div class="game-title">🎰 Double</div>
+                <div class="game-content">
+                    <div class="double-wheel" id="double-wheel">2x</div>
+                    <div class="controls">
+                        <button id="double-bet-red">Vermelho</button>
+                        <button id="double-bet-black">Preto</button>
+                        <button id="double-bet-white">Branco</button>
+                    </div>
+                    <div class="result" id="double-result"></div>
+                </div>
+            </div>
+            
+            <!-- CRASH -->
+            <div class="game-panel">
+                <div class="game-title">🚀 Crash</div>
+                <div class="game-content">
+                    <div class="crash-graph">
+                        <div class="crash-line" id="crash-line"></div>
+                    </div>
+                    <div class="controls">
+                        <button id="crash-bet">Apostar</button>
+                    </div>
+                    <div class="result" id="crash-result"></div>
+                </div>
+            </div>
+            
+            <!-- MINES -->
+            <div class="game-panel">
+                <div class="game-title">💣 Mines</div>
+                <div class="game-content">
+                    <div class="mines-grid" id="mines-grid"></div>
+                    <div class="controls">
+                        <button id="mines-start">Iniciar</button>
+                    </div>
+                    <div class="result" id="mines-result"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== DOUBLE =====
+        const doubleWheel = document.getElementById('double-wheel');
+        const doubleResult = document.getElementById('double-result');
+        
+        document.getElementById('double-bet-red').addEventListener('click', () => spinDouble('red'));
+        document.getElementById('double-bet-black').addEventListener('click', () => spinDouble('black'));
+        document.getElementById('double-bet-white').addEventListener('click', () => spinDouble('white'));
+        
+        function spinDouble(bet) {
+            const colors = ['red', 'black', 'white'];
+            const result = colors[Math.floor(Math.random() * colors.length)];
+            
+            doubleWheel.style.background = result === 'white' ? '#FFF' : result;
+            doubleWheel.textContent = result === 'white' ? '14x' : '2x';
+            
+            if (result === bet) {
+                const multiplier = result === 'white' ? 14 : 2;
+                doubleResult.innerHTML = `🎉 <strong>Ganhou ${multiplier}x!</strong>`;
+            } else {
+                doubleResult.innerHTML = `❌ <strong>Perdeu! Caiu ${result.toUpperCase()}</strong>`;
+            }
+        }
+        
+        // ===== CRASH =====
+        const crashLine = document.getElementById('crash-line');
+        const crashResult = document.getElementById('crash-result');
+        
+        document.getElementById('crash-bet').addEventListener('click', startCrash);
+        
+        function startCrash() {
+            crashLine.style.transform = 'scaleX(1)';
+            let multiplier = 1.0;
+            const interval = setInterval(() => {
+                multiplier += 0.1;
+                crashLine.style.transform = `scaleX(${multiplier})`;
+                
+                if (Math.random() < 0.15) { // 15% de chance de crash
+                    clearInterval(interval);
+                    crashResult.innerHTML = `💥 <strong>Crashou em ${multiplier.toFixed(2)}x</strong>`;
+                }
+            }, 200);
+        }
+        
+        // ===== MINES =====
+        const minesGrid = document.getElementById('mines-grid');
+        const minesResult = document.getElementById('mines-result');
+        
+        document.getElementById('mines-start').addEventListener('click', startMines);
+        
+        function startMines() {
+            minesGrid.innerHTML = '';
+            minesResult.textContent = '';
+            
+            // Posicionar 3 minas aleatórias
+            const mines = [];
+            while (mines.length < 3) {
+                const pos = Math.floor(Math.random() * 25);
+                if (!mines.includes(pos)) mines.push(pos);
+            }
+            
+            // Criar grade 5x5
+            for (let i = 0; i < 25; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'mine-cell';
+                cell.textContent = '💎';
+                
+                cell.addEventListener('click', () => {
+                    if (mines.includes(i)) {
+                        cell.textContent = '💣';
+                        cell.style.background = '#E53935';
+                        minesResult.innerHTML = '💥 <strong>Você perdeu!</strong>';
+                    } else {
+                        cell.textContent = '💰';
+                        cell.style.background = '#4CAF50';
+                    }
+                });
+                
+                minesGrid.appendChild(cell);
+            }
+        }
+    </script>
+</body>
+</html>
